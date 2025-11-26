@@ -1,20 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Bot, Cpu, Key, Globe } from 'lucide-react';
-import { AIConfig } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Save, Bot, Cpu, Key, Globe, Sparkles, Loader2, PauseCircle } from 'lucide-react';
+import { AIConfig, LinkItem } from '../types';
+import { generateLinkDescription } from '../services/geminiService';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   config: AIConfig;
   onSave: (config: AIConfig) => void;
+  links: LinkItem[];
+  onUpdateLinks: (links: LinkItem[]) => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, onSave }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({ 
+    isOpen, onClose, config, onSave, links, onUpdateLinks 
+}) => {
   const [localConfig, setLocalConfig] = useState<AIConfig>(config);
+  
+  // Bulk Generation State
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const shouldStopRef = useRef(false);
 
   useEffect(() => {
     if (isOpen) {
       setLocalConfig(config);
+      setIsProcessing(false);
+      setProgress({ current: 0, total: 0 });
+      shouldStopRef.current = false;
     }
   }, [isOpen, config]);
 
@@ -27,13 +40,63 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
     onClose();
   };
 
+  const handleBulkGenerate = async () => {
+    if (!localConfig.apiKey) {
+        alert("请先配置并保存 API Key");
+        return;
+    }
+
+    const missingLinks = links.filter(l => !l.description);
+    if (missingLinks.length === 0) {
+        alert("所有链接都已有描述！");
+        return;
+    }
+
+    if (!confirm(`发现 ${missingLinks.length} 个链接缺少描述，确定要使用 AI 自动生成吗？这可能需要一些时间。`)) return;
+
+    setIsProcessing(true);
+    shouldStopRef.current = false;
+    setProgress({ current: 0, total: missingLinks.length });
+    
+    // Create a local copy to mutate
+    let currentLinks = [...links];
+
+    // We process sequentially to avoid rate limits
+    for (let i = 0; i < missingLinks.length; i++) {
+        if (shouldStopRef.current) break;
+
+        const link = missingLinks[i];
+        try {
+            const desc = await generateLinkDescription(link.title, link.url, localConfig);
+            
+            // Update the specific link in our local copy
+            currentLinks = currentLinks.map(l => l.id === link.id ? { ...l, description: desc } : l);
+            
+            // Sync to parent every 1 item to show progress in UI (Optional: could batch every 5)
+            onUpdateLinks(currentLinks);
+            
+            setProgress({ current: i + 1, total: missingLinks.length });
+
+        } catch (e) {
+            console.error(`Failed to generate for ${link.title}`, e);
+        }
+    }
+
+    setIsProcessing(false);
+  };
+
+  const handleStop = () => {
+      shouldStopRef.current = true;
+      setIsProcessing(false);
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col max-h-[90vh]">
         
-        <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
           <h3 className="text-lg font-semibold dark:text-white flex items-center gap-2">
             <Bot className="text-blue-500" /> AI 设置
           </h3>
@@ -42,7 +105,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
           </button>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-6 overflow-y-auto">
             
             {/* Provider Selection */}
             <div>
@@ -118,9 +181,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
                 </div>
             </div>
 
+            {/* Bulk Actions */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                <h4 className="text-sm font-medium dark:text-white mb-3 flex items-center gap-2">
+                    <Sparkles className="text-amber-500" size={16} /> 批量操作
+                </h4>
+                
+                {isProcessing ? (
+                     <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg space-y-3">
+                        <div className="flex justify-between text-xs text-slate-600 dark:text-slate-300">
+                             <span>正在生成描述...</span>
+                             <span>{progress.current} / {progress.total}</span>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2">
+                            <div 
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                            ></div>
+                        </div>
+                        <button 
+                            onClick={handleStop}
+                            className="w-full py-1.5 text-xs flex items-center justify-center gap-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded border border-red-200 dark:border-red-800 transition-colors"
+                        >
+                            <PauseCircle size={12} /> 停止处理
+                        </button>
+                     </div>
+                ) : (
+                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-lg">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                            自动扫描所有没有描述的链接，并调用上方配置的 AI 模型生成简介。
+                        </div>
+                        <button
+                            onClick={handleBulkGenerate}
+                            className="w-full py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 dark:text-slate-200 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Sparkles size={16} /> 一键补全所有描述
+                        </button>
+                    </div>
+                )}
+            </div>
+
         </div>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end gap-3 shrink-0">
              <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">取消</button>
              <button 
                 onClick={handleSave}

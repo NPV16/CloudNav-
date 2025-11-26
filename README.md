@@ -1,85 +1,129 @@
-# CloudNav (云航) - Cloudflare 版
+# CloudNav (云航) - 智能私有导航站
 
-这是一个现代化的、基于 AI 辅助的个人导航站。支持从 Chrome 书签导入，并且可以免费托管在 Cloudflare Pages 上，利用 Cloudflare KV 实现多端数据同步。
+<div align="center">
 
-## ✨ 主要功能
+![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38bdf8?style=flat-square&logo=tailwindcss)
+![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages-orange?style=flat-square&logo=cloudflare)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-*   **多端同步**: 利用 Cloudflare KV 存储数据，在公司电脑、家里电脑和手机上看到的导航内容完全一致。
-*   **书签导入**: 支持直接导入 Chrome/Edge 导出的 HTML 书签文件。
-*   **AI 智能辅助**: 集成 Google Gemini API，自动为链接生成简介、自动分类。
-*   **暗黑模式**: 完美支持深色/浅色主题切换。
-*   **安全隐私**: 支持设置访问密码，防止他人随意修改您的导航数据。
+**一个现代化、基于 AI 辅助的全栈个人导航站。**
+**无需购买服务器，依托 Cloudflare 免费托管，实现多端数据实时同步。**
+
+[功能特性](#-核心功能) • [部署教程](#-部署教程-免费) • [使用指南](#-使用指南)
+
+</div>
 
 ---
 
-## 🚀 部署教程 (图形化界面)
+## ✨ 核心功能
 
-无需懂代码，只要有 GitHub 账号即可完成部署。
+### 🧠 AI 深度集成 (新功能)
+*   **多模型支持**: 完美支持 **Google Gemini**、**OpenAI**、**DeepSeek**、**Claude** 等任何兼容 OpenAI 接口的模型。
+*   **一键智能补全**: 在设置面板一键扫描，自动为成百上千个书签生成精准的中文简介。
+*   **智能分类**: 添加链接时，AI 自动分析网页内容并推荐最合适的分类目录。
 
-### 第一步：准备 GitHub 仓库
-1. 将本项目的所有代码上传到您的 GitHub 仓库中（例如命名为 `my-nav`）。
+### ☁️ 数据同步与安全
+*   **Cloudflare KV 同步**: 利用边缘存储技术，公司、家里、手机三端数据秒级同步。
+*   **WebDAV 双重备份**: 支持坚果云、Nextcloud 等 WebDAV 网盘备份，数据自主掌控。
+*   **隐私加密体系**:
+    *   **全局锁**: 部署时设置访问密码，防止他人查看。
+    *   **目录锁**: 支持对“私有资源”等特定分类单独设置密码，隐藏敏感内容。
 
-### 第二步：创建 Cloudflare Pages 项目
+### 🎨 极致体验
+*   **紧凑型网格**: 高效的扁平化布局，大屏下每行展示更多内容。
+*   **置顶专区**: 常用网站一键置顶，在首页顶部常驻显示。
+*   **无缝迁移**: 支持导入 Chrome/Edge 书签 HTML 文件（智能去重），亦可导出标准格式。
+
+---
+
+## 🚀 部署教程 (免费)
+
+只需拥有 GitHub 账号，即可在 5 分钟内完成部署。
+
+### 第一步：Fork 项目
+1. 点击本项目页面右上角的 **Fork** 按钮。
+2. 将仓库复制到您自己的 GitHub 账号下。
+
+### 第二步：创建 Cloudflare Pages
 1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com/)。
-2. 在左侧菜单点击 **Workers & Pages** -> **Overview**。
+2. 导航至 **Workers & Pages** -> **Overview**。
 3. 点击 **Create application** -> **Pages** -> **Connect to Git**。
-4. 选择您刚才创建的 GitHub 仓库 (`my-nav`)。
-5. **构建配置 (Build settings)**:
-    *   **Framework preset**: 选择 `Create React App` (或者手动填)
-    *   **Build command**: `npm run build`
-    *   **Build output directory**: `dist` (注意：如果是 Vite 项目通常是 `dist`，如果是 CRA 是 `build`，本项目基于 Vite 结构，请填 `dist`)。
+4. 选择刚才 Fork 的仓库 `mao_nav`。
+5. **配置构建参数 (关键)**:
+    *   **Project name**: 随意填写 (如 `my-nav`)。
+    *   **Production branch**: `main` (或 `master`)。
+    *   **Framework preset**: **None (不选 / 空)** <small>*(注意：不要选 React 或 Create React App)*</small>。
+    *   **Build command**: `npm run build`。
+    *   **Build output directory**: `dist`。
 6. 点击 **Save and Deploy**。
 
-### 第三步：创建并绑定 KV 数据库 (用于存储数据)
-1. 部署完成后（或者失败也没关系，先配置环境），回到 Cloudflare Dashboard 的 **Workers & Pages**。
-2. 点击左侧菜单的 **KV**。
-3. 点击 **Create a Namespace**，命名为 `CLOUDNAV_DB`，点击 Add。
+### 第三步：创建并绑定数据库 (KV)
+1. 部署完成后（首次可能报错，请忽略），回到 Cloudflare 的 **Workers & Pages** 主页。
+2. 点击左侧菜单 **KV**。
+3. 点击 **Create a Namespace**，输入名称 `CLOUDNAV_DB`，点击 Add。
 4. 回到您的 Pages 项目页面 -> **Settings** -> **Functions**。
-5. 找到 **KV Namespace Bindings** 部分，点击 **Add binding**。
-    *   **Variable name**: 必须填 `CLOUDNAV_KV` (代码中是这样读取的)。
+5. 找到 **KV Namespace Bindings** 区域，点击 **Add binding**。
+    *   **Variable name**: 必须填 `CLOUDNAV_KV`。
     *   **KV Namespace**: 选择刚才创建的 `CLOUDNAV_DB`。
 6. 点击 **Save**。
 
-### 第四步：设置环境变量 (密码与 AI)
+### 第四步：设置访问密码
 1. 在 Pages 项目页面 -> **Settings** -> **Environment variables**。
 2. 点击 **Add variables**，添加以下变量：
-    *   `PASSWORD`: 设置一个管理密码（例如 `123456`）。**必填**，否则无法保存数据。
-    *   `API_KEY`: Google Gemini 的 API Key (可选，用于 AI 生成描述)。
+    *   **Variable name**: `PASSWORD`
+    *   **Value**: 设置您的全局访问密码 (例如 `88888888`)。
 3. 点击 **Save**。
+    > **注意**: 无需在此处配置 API Key，API Key 现在直接在网页端的设置面板中配置。
 
-### 第五步：重新部署
-1. 配置完环境变量和 KV 后，必须重新部署才能生效。
-2. 点击顶部 **Deployments** 标签 -> 点击最新的那次部署右侧的三个点 -> **Retry deployment**。
-3. 等待部署成功，访问 Cloudflare 提供的 `*.pages.dev` 域名即可。
+### 第五步：重试部署
+1. 配置完 KV 和环境变量后，必须重新部署才能生效。
+2. 点击顶部 **Deployments** 标签。
+3. 找到最新的一次部署记录，点击右侧的三个点 **...** -> **Retry deployment**。
+4. 等待部署成功（状态变为 Success），点击生成的 `*.pages.dev` 链接即可访问。
 
 ---
 
-## 🌐 绑定自定义域名
+## ⚙️ 使用指南
 
-1. 在 Pages 项目页面，点击 **Custom domains** 标签。
+### 1. 初始配置与导入
+*   首次访问请输入您设置的 `PASSWORD`。
+*   点击侧边栏底部的 **“导入”** 图标，上传 Chrome 导出的 `bookmarks.html` 文件。
+*   选择 **“保持原目录结构”** 或 **“合并到指定目录”** 进行导入。
+
+### 2. 配置 AI 服务 (Gemini / DeepSeek / OpenAI)
+想要使用 AI 自动生成描述功能，请点击侧边栏底部的 **“设置” (Settings)** 图标：
+
+*   **API 提供商**:
+    *   **Google Gemini**: 直接输入 Key 即可（需自备梯子或在境外环境）。
+    *   **OpenAI 兼容**: 适用于 **DeepSeek**、**ChatGPT**、**Claude** 等。
+*   **Base URL (仅兼容模式)**:
+    *   DeepSeek 示例: `https://api.deepseek.com`
+    *   自定义代理: `https://api.your-proxy.com/v1`
+*   **模型名称**: `gemini-2.5-flash`, `deepseek-chat`, `gpt-4o-mini` 等。
+*   **一键补全**: 配置完成后，点击底部的 **“一键补全所有描述”**，AI 将自动扫描所有无描述的链接并后台生成。
+
+### 3. 自定义域名 (可选)
+1. 在 Cloudflare Pages 项目页面，点击 **Custom domains**。
 2. 点击 **Set up a custom domain**。
-3. 输入您在 Cloudflare 上解析的域名（例如 `nav.yourdomain.com`）。
-4. Cloudflare 会自动修改 DNS 记录，等待生效即可。
+3. 输入您托管在 Cloudflare 上的域名 (如 `nav.example.com`)，系统会自动配置 DNS。
 
 ---
 
-## 🛠️ 本地开发
+## 🛠️ 常见问题
 
-```bash
-# 安装依赖
-npm install
+**Q: 修改了网页上的内容，为什么刷新后没有了？**
+A: 请检查是否正确配置了 `CLOUDNAV_KV` 绑定。如果未绑定 KV，数据只会保存在浏览器本地缓存中，清除缓存后会丢失。
 
-# 启动本地开发 (注意：本地无法直接连接线上 KV，数据仅保存在本地)
-npm start
-```
+**Q: AI 生成描述失败？**
+A: 请检查设置中的 API Key 是否正确，以及 Base URL 是否填写正确（通常不需要加 `/chat/completions` 后缀，系统会自动处理）。
 
-## 📝 常见问题
+**Q: 如何备份数据？**
+A: 点击侧边栏的 **“备份”** 图标，配置 WebDAV 信息，即可一键上传备份到云端。也可以点击“导出 HTML”下载到本地。
 
-**Q: 第一次打开为什么是空的？**
-A: 点击右下角的“导入 Chrome 书签”或者点击右上角“添加链接”手动添加。
+---
 
-**Q: 保存时提示“密码错误”？**
-A: 首次打开网页时会要求输入密码。如果没弹窗，请刷新页面。确保 Cloudflare 环境变量中配置了 `PASSWORD`。
-
-**Q: AI 功能无法使用？**
-A: 请检查环境变量 `API_KEY` 是否正确配置，且您的网络环境允许访问 Google Gemini API (Cloudflare Pages 后端通常可以访问)。
+<div align="center">
+Made with ❤️ by CloudNav Team
+</div>

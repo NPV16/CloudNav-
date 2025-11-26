@@ -465,6 +465,8 @@ function App() {
         onClose={() => setIsSettingsModalOpen(false)}
         config={aiConfig}
         onSave={handleSaveAIConfig}
+        links={links}
+        onUpdateLinks={(newLinks) => updateData(newLinks, categories)}
       />
 
       {/* Sidebar Mobile Overlay */}
