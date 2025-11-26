@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Loader2 } from 'lucide-react';
+import { X, Sparkles, Loader2, Pin } from 'lucide-react';
 import { LinkItem, Category } from '../types';
 import { generateLinkDescription, suggestCategory } from '../services/geminiService';
 
@@ -16,6 +16,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, categori
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id || 'common');
+  const [pinned, setPinned] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
@@ -25,18 +26,20 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, categori
         setUrl(initialData.url);
         setDescription(initialData.description || '');
         setCategoryId(initialData.categoryId);
+        setPinned(initialData.pinned || false);
       } else {
         setTitle('');
         setUrl('');
         setDescription('');
         setCategoryId(categories[0]?.id || 'common');
+        setPinned(false);
       }
     }
   }, [isOpen, initialData, categories]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ title, url, description, categoryId });
+    onSave({ title, url, description, categoryId, pinned });
     onClose();
   };
 
@@ -104,7 +107,7 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, categori
 
           <div>
             <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium dark:text-slate-300">描述</label>
+                <label className="block text-sm font-medium dark:text-slate-300">描述 (选填)</label>
                 {(title && url) && (
                     <button
                         type="button"
@@ -125,17 +128,33 @@ const LinkModal: React.FC<LinkModalProps> = ({ isOpen, onClose, onSave, categori
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 dark:text-slate-300">分类</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
+          <div className="flex gap-4">
+            <div className="flex-1">
+                <label className="block text-sm font-medium mb-1 dark:text-slate-300">分类</label>
+                <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                >
+                {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+                </select>
+            </div>
+            <div className="flex items-end pb-2">
+                <button
+                    type="button"
+                    onClick={() => setPinned(!pinned)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${
+                        pinned 
+                        ? 'bg-blue-100 border-blue-200 text-blue-600 dark:bg-blue-900/40 dark:border-blue-800 dark:text-blue-300' 
+                        : 'bg-slate-50 border-slate-200 text-slate-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-400'
+                    }`}
+                >
+                    <Pin size={16} className={pinned ? "fill-current" : ""} />
+                    <span className="text-sm font-medium">置顶</span>
+                </button>
+            </div>
           </div>
 
           <div className="pt-2">
